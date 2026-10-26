@@ -212,3 +212,31 @@ func TestStripeLivemodeDerivation(t *testing.T) {
 		})
 	}
 }
+
+
+// TestIsLoopbackURL covers local hostnames and loopback IPs used by the
+// production BASE_URL warning. Hostnames are case-insensitive, while
+// lookalike remote hosts must not be treated as local.
+func TestIsLoopbackURL(t *testing.T) {
+	for _, tc := range []struct {
+		url  string
+		want bool
+	}{
+		{"http://localhost:9000", true},
+		{"http://LOCALHOST:9000", true},
+		{"http://LocalHost.localdomain", false},
+		{"http://service.localhost:9000", true},
+		{"http://127.0.0.1:9000", true},
+		{"http://[::1]:9000", true},
+		{"http://192.168.1.10:9000", false},
+		{"http://localhost.example.com:9000", false},
+		{"not a URL", false},
+		{"", false},
+	} {
+		t.Run(tc.url, func(t *testing.T) {
+			if got := isLoopbackURL(tc.url); got != tc.want {
+				t.Errorf("isLoopbackURL(%q) = %v, want %v", tc.url, got, tc.want)
+			}
+		})
+	}
+}
